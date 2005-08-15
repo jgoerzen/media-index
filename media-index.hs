@@ -20,6 +20,7 @@ module Main where
 
 import Config
 import System.Environment
+import Scan
 
 syntax = do
          putStrLn "Syntax:"
@@ -31,4 +32,5 @@ main = do
           [dir, num, title] -> process dir num title
           _ -> syntax
 
-process dir num title = do print "foo"
+process dir num title = 
+    do scan dir num title
