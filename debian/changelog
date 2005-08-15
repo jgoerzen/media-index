@@ -1,0 +1,6 @@
+media-index (0.1.0-1) unstable; urgency=low
+
+  * Initial release Closes: #nnnn  (nnnn is the bug number of your ITP)
+
+ -- John Goerzen <jgoerzen@complete.org>  Mon, 15 Aug 2005 05:41:50 -0500
+
