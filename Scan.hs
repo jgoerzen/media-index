@@ -24,8 +24,8 @@ import System.Posix.Files
 import MissingH.IO.HVFS
 import Control.Monad
 
-scan dir num title = 
-    do files <- bracketCWD dir (recurseDirStat SystemFS ".")
+scan dir num title = bracketCWD dir $
+    do files <- recurseDirStat SystemFS "."
        writefiles dir num title (map convfile files)
     where convfile (fn, fs) = (drop 2 fn, fs)
 
@@ -35,14 +35,12 @@ writefiles dir num title files =
        writeFile (id ++ "/" ++ num ++ ".idx.txt") (unlines (snd res))
     where writeit (counter,accum) (fn,fs) =
               do if counter `mod` 10 == 0
-                    then putStrLn $ "Processed " ++ num ++ " files"
+                    then putStrLn $ "Processed " ++ (show counter) ++ " files"
                     else return ()
                  let filesize = withStat fs vFileSize
                  let entry = fn ++ "\t" ++ (show filesize)
                  return (counter + 1,
                          entry : accum)
-
-                 
 
 index dir num title = brackettmpdir "/tmp/media-index.XXXXXX" (\td ->
    do createSymbolicLink dir (td ++ "/" ++ num)
