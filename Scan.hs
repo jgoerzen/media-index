@@ -16,13 +16,38 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
-module Scan where
+module Scan(scan, index) where
 import Config
 import MissingH.Path
 import MissingH.Cmd
 import System.Posix.Files
+import MissingH.IO.HVFS
+import Control.Monad
 
-scan dir num title = brackettmpdirCWD "/tmp/media-index.XXXXXX" $
-   do createSymbolicLink dir num
+scan dir num title = 
+    do files <- bracketCWD dir (recurseDirStat SystemFS ".")
+       writefiles dir num title (map convfile files)
+    where convfile (fn, fs) = (drop 2 fn, fs)
+
+writefiles dir num title files =
+    do id <- fileDir
+       res <- foldM writeit (1,[]) files
+       writeFile (id ++ "/" ++ num ++ ".idx.txt") (unlines (snd res))
+    where writeit (counter,accum) (fn,fs) =
+              do if counter `mod` 10 == 0
+                    then putStrLn $ "Processed " ++ num ++ " files"
+                    else return ()
+                 let filesize = withStat fs vFileSize
+                 let entry = fn ++ "\t" ++ (show filesize)
+                 return (counter + 1,
+                         entry : accum)
+
+                 
+
+index dir num title = brackettmpdir "/tmp/media-index.XXXXXX" (\td ->
+   do createSymbolicLink dir (td ++ "/" ++ num)
       nd <- namazuDir
-      safeSystem "mknmz" ["-O", nd, "-V", num]
+      safeSystem "mknmz" ["-O", nd,
+                          "--replace=s#" ++ td ++ "##",
+                          (td ++ "/" ++ num)]
+                                                             )
