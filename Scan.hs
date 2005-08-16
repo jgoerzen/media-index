@@ -66,14 +66,15 @@ runhe extraargs idxfiles =
     -- idxfiles is a list of [(osfilename, heurl)]
     do nm <- namazuDir
        res <- pipeTo "estcmd"
-              (extraargs ++
-               ["gather", "-cl", "-sd", "-cm", "-px", "@uri",
-                "-fx", ".doc,.DOC,.xls,.XLS,.ppt,.PPT", "H@estfxmsotohtml",
-                "-fx", ".pdf,.PDF", "H@estfxpdftohtml", nm, "-"
+              (["gather"] ++ extraargs ++
+               ["-cl", "-sd", "-cm", "-px", "@uri",
+                "-fx", ".doc,.DOC,.xls,.XLS,.ppt,.PPT", "H@" ++ fp ++ "estfxmsotohtml",
+                "-fx", ".pdf,.PDF", "H@" ++ fp ++ "estfxpdftohtml", nm, "-"
                ]
               ) idxstring
        forceSuccess res
     where idxstring = unlines . map (\(osfn, url) -> osfn ++ "\t" ++ url) $ idxfiles
+          fp = "/usr/share/hyperestraier/filter/" -- FIXME
 
 
 
