@@ -34,4 +34,6 @@ main = do
 
 process dir num title = 
     do scan dir num title
+       indexscan dir num title
        index dir num title
+       

@@ -16,7 +16,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
-module Scan(scan, index) where
+module Scan(scan, indexscan, index) where
 import Config
 import MissingH.Path
 import MissingH.Cmd
@@ -27,15 +27,15 @@ import Control.Monad
 scan dir num title = bracketCWD dir $
     do files <- recurseDirStat SystemFS "."
        writefiles dir num title (map convfile files)
-    where convfile (fn, fs) = (drop 2 fn, fs)
+    where convfile (fn, fs) = (num ++ tail fn, fs)
 
 writefiles dir num title files =
     do id <- fileDir
        res <- foldM writeit (1,[]) files
        writeFile (id ++ "/" ++ num ++ ".idx.txt") (unlines (snd res))
     where writeit (counter,accum) (fn,fs) =
-              do if counter `mod` 10 == 0
-                    then putStrLn $ "Processed " ++ (show counter) ++ " files"
+              do if counter `mod` 100 == 0
+                    then putStr $ "Processed " ++ (show counter) ++ " files\r"
                     else return ()
                  let filesize = withStat fs vFileSize
                  let entry = fn ++ "\t" ++ (show filesize)
@@ -44,8 +44,22 @@ writefiles dir num title files =
 
 index dir num title = brackettmpdir "/tmp/media-index.XXXXXX" (\td ->
    do createSymbolicLink dir (td ++ "/" ++ num)
+      args <- mknmzArgs
       nd <- namazuDir
-      safeSystem "mknmz" ["-O", nd,
-                          "--replace=s#" ++ td ++ "##",
-                          (td ++ "/" ++ num)]
+      safeSystem "mknmz" $
+                     args ++ ["-Y", "-f", "mknmzrc", "-O", nd,
+                              "--replace=s#" ++ td ++ "#/CONTENT#",
+                              (td ++ "/" ++ num)]
                                                              )
+
+indexscan dir num title = brackettmpdir "/tmp/media-indexis.XXXXXX" (\td ->
+    do nd <- namazuDir
+       id <- fileDir
+       args <- mknmzArgs
+       let fn = (td ++ "/" ++ num ++ ".idx.txt")
+       createSymbolicLink (id ++ "/" ++ num ++ ".idx.txt") fn
+       safeSystem "mknmz" $
+                      args ++ ["-Y", "-f", "mknmzrc", "-O", nd,
+                           "--replace=s#" ++ fn ++ "#/INDEX/" ++ num ++ "#",
+                           "--media-type=text/plain", fn]
+                                                                    )

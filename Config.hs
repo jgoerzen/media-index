@@ -16,15 +16,18 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
-module Config (namazuDir, fileDir)
+module Config (namazuDir, fileDir, mknmzArgs)
 where
 
 import MissingH.ConfigParser
 import MissingH.Either
+import MissingH.Str
 import System.Directory
 
+basecp = forceEither $ set emptyCP "DEFAULT" "mknmzargs" "[]"
+
 getcp = do hd <- getHomeDirectory
-           val <- readfile emptyCP (hd ++ "/.media-indexrc")
+           val <- readfile basecp (hd ++ "/.media-indexrc")
            return $ forceEither val
 
 genericget :: String -> IO String
@@ -34,4 +37,6 @@ genericget opt = do cp <- getcp
 namazuDir = genericget "namazuindex"
 fileDir = genericget "fileindex"
 
-               
+mknmzArgs :: IO [String]
+mknmzArgs = do a <- genericget "mknmzargs"
+               return $ read a

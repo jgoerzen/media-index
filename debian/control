@@ -8,6 +8,6 @@ Standards-Version: 3.6.1
 Package: media-index
 Architecture: any
 Suggests: rpm
-Depends: ${shlibs:Depends}, ${misc:Depends}, namazu2, namazu2-index-tools, bzip2, groff, libmp3-info-perl, wv, unzip, xpdf-utils, xlhtml, detex, rtf2html
+Depends: ${shlibs:Depends}, ${misc:Depends}, namazu2, namazu2-index-tools, bzip2, groff, libmp3-info-perl, wv, unzip, xpdf-utils, xlhtml, detex, rtf2html, gs-common
 Description: <insert up to 60 chars description>
  <insert long description, indented with spaces>
