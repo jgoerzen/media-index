@@ -22,44 +22,58 @@ import MissingH.Path
 import MissingH.Cmd
 import System.Posix.Files
 import MissingH.IO.HVFS
+import System.IO
 import Control.Monad
 
 scan dir num title = bracketCWD dir $
     do files <- recurseDirStat SystemFS "."
-       writefiles dir num title (map convfile files)
-    where convfile (fn, fs) = (num ++ tail fn, fs)
+       writefiles dir num title (map (convfile num) files)
+       putStrLn "Adding files to index..."
+       index dir num title files
+
+convfile num (fn, fs) = (num ++ tail fn, fs)
+nodirs = filter (\(fn, fs) -> not $ withStat fs vIsDirectory)
 
 writefiles dir num title files =
-    do id <- fileDir
+    do putStrLn "Scanning input directory..."
+       id <- fileDir
        res <- foldM writeit (1,[]) files
        writeFile (id ++ "/" ++ num ++ ".idx.txt") (unlines (snd res))
     where writeit (counter,accum) (fn,fs) =
-              do if counter `mod` 100 == 0
-                    then putStr $ "Processed " ++ (show counter) ++ " files\r"
+              do if counter `mod` 10 == 0
+                    then do putStr $ "Processed " ++ (show counter) ++ " files\r"
+                            hFlush stdout
                     else return ()
                  let filesize = withStat fs vFileSize
                  let entry = fn ++ "\t" ++ (show filesize)
                  return (counter + 1,
                          entry : accum)
 
-index dir num title = brackettmpdir "/tmp/media-index.XXXXXX" (\td ->
-   do createSymbolicLink dir (td ++ "/" ++ num)
-      args <- mknmzArgs
-      nd <- namazuDir
-      safeSystem "mknmz" $
-                     args ++ ["-Y", "-f", "mknmzrc", "-O", nd,
-                              "--replace=s#" ++ td ++ "#/CONTENT#",
-                              (td ++ "/" ++ num)]
-                                                             )
+index dir num title files = 
+    runhe [] filelist
+    where filelist = map mkfilen files
+          mkfilen :: (String,a) -> (String, String)
+          mkfilen (fn,fs) = (fn, "file:///CONTENTS/" ++ (fst $ convfile num (fn,fs)))
 
-indexscan dir num title = brackettmpdir "/tmp/media-indexis.XXXXXX" (\td ->
-    do nd <- namazuDir
-       id <- fileDir
-       args <- mknmzArgs
-       let fn = (td ++ "/" ++ num ++ ".idx.txt")
-       createSymbolicLink (id ++ "/" ++ num ++ ".idx.txt") fn
-       safeSystem "mknmz" $
-                      args ++ ["-Y", "-f", "mknmzrc", "-O", nd,
-                           "--replace=s#" ++ fn ++ "#/INDEX/" ++ num ++ "#",
-                           "--media-type=text/plain", fn]
-                                                                    )
+indexscan dir num title = 
+    do id <- fileDir
+       runhe ["-ft"] 
+                 [(id ++ "/" ++ num ++ ".idx.txt",
+                   "file:///INDEX/" ++ num)]
+
+runhe :: [String] -> [(String, String)] -> IO ()
+runhe extraargs idxfiles =
+    -- idxfiles is a list of [(osfilename, heurl)]
+    do nm <- namazuDir
+       res <- pipeTo "estcmd"
+              (extraargs ++
+               ["gather", "-cl", "-sd", "-cm", "-px", "@uri",
+                "-fx", ".doc,.DOC,.xls,.XLS,.ppt,.PPT", "H@estfxmsotohtml",
+                "-fx", ".pdf,.PDF", "H@estfxpdftohtml", nm, "-"
+               ]
+              ) idxstring
+       forceSuccess res
+    where idxstring = unlines . map (\(osfn, url) -> osfn ++ "\t" ++ url) $ idxfiles
+
+
+
