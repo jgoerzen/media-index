@@ -21,6 +21,7 @@ module Main where
 import Config
 import System.Environment
 import Scan
+import MissingH.IO
 
 syntax = do
          putStrLn "Syntax:"
@@ -28,6 +29,7 @@ syntax = do
 
 main = do
        args <- getArgs
+       optimizeForBatch
        case args of
           [dir, num, title] -> process dir num title
           _ -> syntax
