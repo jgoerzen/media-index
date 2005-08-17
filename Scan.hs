@@ -25,11 +25,27 @@ import MissingH.IO.HVFS
 import System.IO
 import Control.Monad
 
+mb = 1048576
+
 scan dir num title = bracketCWD dir $
-    do files <- recurseDirStat SystemFS "."
-       writefiles dir num title (map (convfile num) files)
-       putStrLn "Adding files to index..."
-       index dir num title files
+    do putStrLn " *** Scanning source directory..."
+       items <- (recurseDirStat SystemFS "." >>= dispCount)
+       putStr $ "Found " ++ (show $ length items) ++ " total items.  "
+       let files = nodirs items
+       let size = sum . map (\(_, fs) -> withStat fs vFileSize) $ files
+       putStrLn $ (show (length files)) ++ " regular files, totaling " ++
+                show (size `div` mb) ++ "MB"
+
+dispCount :: [a] -> IO [a]
+dispCount inp =
+    do res <- foldM writeit (0,[]) inp
+       return $ snd res
+    where writeit (counter, accum) x =
+              do if counter `mod` 10 == 0
+                    then do putStr $ "Found " ++ (show counter) ++ " items\r"
+                            hFlush stdout
+                    else return ()
+                 return (counter + 1, x : accum)
 
 convfile num (fn, fs) = (num ++ tail fn, fs)
 nodirs = filter (\(fn, fs) -> not $ withStat fs vIsDirectory)
