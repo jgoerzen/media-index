@@ -24,8 +24,20 @@ import System.Posix.Files
 import MissingH.IO.HVFS
 import System.IO
 import Control.Monad
+import Scanutils
 
 mb = 1048576
+
+counter :: (Int -> IO ()) -> Int -> [a] -> IO [a]
+counter dispf interval inplist =
+    do res <- foldM writeit (0,[]) inplist
+       return $ snd res
+    where writeit (count, accum) x =
+              do if count `mod` interval == 0
+                    then do dispf count
+                            hFlush stdout
+                    else return ()
+                 return (count + 1, x : accum)
 
 scan dir num title = bracketCWD dir $
     do putStrLn " *** Scanning source directory..."
@@ -35,17 +47,23 @@ scan dir num title = bracketCWD dir $
        let size = sum . map (\(_, fs) -> withStat fs vFileSize) $ files
        putStrLn $ (show (length files)) ++ " regular files, totaling " ++
                 show (size `div` mb) ++ "MB"
+       putStrLn " *** Determining MD5 sums and MIME types for files."
+       m <- initMagic
+       xfiles <- addMeta m files
+       putStrLn $ show (length xfiles)
+    where 
+    dispCount = counter (\i -> putStr $ "Found " ++ (show i) ++ " items\r")
+                        10
 
-dispCount :: [a] -> IO [a]
-dispCount inp =
-    do res <- foldM writeit (0,[]) inp
-       return $ snd res
-    where writeit (counter, accum) x =
-              do if counter `mod` 10 == 0
-                    then do putStr $ "Found " ++ (show counter) ++ " items\r"
-                            hFlush stdout
-                    else return ()
-                 return (counter + 1, x : accum)
+addMeta _ [] = return []
+addMeta m ((fn, fs):xs) =
+    catch (do ftype <- getMimeType m fn
+              --putStrLn $ fn ++ " " ++ ftype
+              --fmd5 <- getMD5 fn
+              next <- addMeta m xs
+              return $ (fn, fs, ftype, ""):next
+          ) (\e -> do putStrLn $ "WARNING " ++ fn ++ ": " ++ (show e)
+                      addMeta m xs)
 
 convfile num (fn, fs) = (num ++ tail fn, fs)
 nodirs = filter (\(fn, fs) -> not $ withStat fs vIsDirectory)
