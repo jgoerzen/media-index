@@ -11,6 +11,6 @@ Extensions: ExistentialQuantification, AllowOverlappingInstances,
     AllowUndecidableInstances, ForeignFunctionInterface
 GHC-Options: -O2
 Main-Is: media-index.hs
-C-Sources: media_md5.c
+C-Sources: Scan/media_md5.c
 Extra-Libraries: mhash
 
