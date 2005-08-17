@@ -16,7 +16,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
-module Scan(scan, indexscan, index) where
+module Scan.Scan(scan, indexscan, index) where
 import Data.Maybe
 import Config
 import Control.Monad
@@ -27,7 +27,7 @@ import System.Posix.Files
 import MissingH.IO.HVFS
 import System.IO
 import Control.Monad
-import Scanutils
+import Scan.Scanutils
 
 mb = 1048576
 
@@ -48,7 +48,7 @@ scan dir num title = bracketCWD dir $
        putStr $ "Found " ++ (show $ length items) ++ " total items.  "
        let files = nodirs items
        let size = sum . map (\(_, fs) -> withStat fs vFileSize) $ files
-       putStrLn $ (show (length files)) ++ " regular files, totaling " ++
+       putStrLn $ (show (length files)) ++ " non-directories, totaling " ++
                 show (size `div` mb) ++ "MB"
        putStrLn " *** Determining MD5 sums and MIME types for files."
        m <- initMagic
@@ -68,7 +68,7 @@ addMeta m inp =
     where conv (fn,fs) = catch
                          (do ftype <- getMimeType m fn
                              fmd5 <- getMD5Sum fn (withStat fs vFileSize)
-                             putStrLn $ fn ++ " " ++ ftype ++ " " ++ fmd5
+                             --putStrLn $ fn ++ " " ++ ftype ++ " " ++ fmd5
                              return $ Just (fn, fs, ftype, fmd5)
                          ) (\e -> do putStrLn $ 
                                       "WARNING " ++ fn ++ ": " ++ (show e)
@@ -76,6 +76,9 @@ addMeta m inp =
                            )
 
 convfile num (fn, fs) = (num ++ tail fn, fs)
+
+-- FIXME: should probably select just files and symlinks
+
 nodirs = filter (\(fn, fs) -> not $ withStat fs vIsDirectory)
 
 writefiles dir num title files =

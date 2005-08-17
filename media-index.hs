@@ -20,7 +20,7 @@ module Main where
 
 import Config
 import System.Environment
-import Scan
+import Scan.Scan
 import MissingH.IO
 
 syntax = do
