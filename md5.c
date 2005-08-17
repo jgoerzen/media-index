@@ -8,24 +8,24 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include <beecrypt/beecrypt.h>
-#include <beecrypt/md5.h>
+#include <mhash.h>
 
-#define MD5_BLOCKSIZE 512 * 1048576 /* 512 MB */
+#define MD5_BLOCKSIZE 4096
+/* * 1048576 */ /* 512 MB */
 
 /* FIXME: error checking! */
 
 char *md5sum(char *file, off_t size) {
-  static char *retval[33];
-  byte digest[20];
-  byte *buf;
-  md5Param md;
+  static char retval[33];
+  unsigned char digest[20];
+  char *buf;
+  MHASH md;
   off_t procoffset = 0;
   size_t chunksize;
   off_t remaining;
   int i, fd;
 
-  md5Reset(&md);
+  md = mhash_init(MHASH_MD5);
   fd = open(file, O_RDONLY);
   
   while (size > procoffset) {
@@ -33,16 +33,16 @@ char *md5sum(char *file, off_t size) {
     chunksize = remaining > MD5_BLOCKSIZE ? MD5_BLOCKSIZE : (size_t)remaining;
     
     buf = mmap((void *) 0, chunksize, PROT_READ, MAP_SHARED, fd, procoffset);
-    md5Update(&md, buf, chunksize);
+    mhash(md, buf, chunksize);
     munmap(buf, chunksize);
     procoffset += (off_t) chunksize;
   }
   close(fd);
 
-  md5Digest(&md, digest);
+  mhash_deinit(md, digest);
   
   for (i = 0; i < 16; i++) {
-    sprintf(retval + (i * 2), "%hhx", digest[i]);
+    sprintf(retval + (i * 2), "%.2x", digest[i]);
   }
 
   return retval;
