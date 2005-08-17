@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 /* Must be a multiple of the pagesize */
 #define MD5_BLOCKSIZE 512 * 1048576 /* 512 MB */
 
-char *md5sum(char *file, off_t size) {
+char *media_md5sum(char *file, off_t size) {
   static char retval[33];
   unsigned char digest[20];
   char *buf;

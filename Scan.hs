@@ -67,9 +67,9 @@ addMeta m inp =
        return $ mapMaybe id conv
     where conv (fn,fs) = catch
                          (do ftype <- getMimeType m fn
-                             --putStrLn $ fn ++ " " ++ ftype
-                             --fmd5 <- getMD5 fn
-                             return $ Just (fn, fs, ftype, "")
+                             fmd5 <- getMD5Sum fn (withStat fs vFileSize)
+                             putStrLn $ fn ++ " " ++ ftype ++ " " ++ fmd5
+                             return $ Just (fn, fs, ftype, fmd5)
                          ) (\e -> do putStrLn $ 
                                       "WARNING " ++ fn ++ ": " ++ (show e)
                                      return Nothing
