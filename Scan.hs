@@ -17,9 +17,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
 module Scan(scan, indexscan, index) where
+import Data.Maybe
 import Config
+import Control.Monad
 import MissingH.Path
 import MissingH.Cmd
+import MissingH.IO
 import System.Posix.Files
 import MissingH.IO.HVFS
 import System.IO
@@ -49,21 +52,28 @@ scan dir num title = bracketCWD dir $
                 show (size `div` mb) ++ "MB"
        putStrLn " *** Determining MD5 sums and MIME types for files."
        m <- initMagic
-       xfiles <- addMeta m files
+       xfiles <- (addMeta m files >>= md5progress (length files))
        putStrLn $ show (length xfiles)
     where 
     dispCount = counter (\i -> putStr $ "Found " ++ (show i) ++ " items\r")
                         10
+    md5progress fc =
+        counter (\i -> putStr $ "File " ++ (show i) ++ " of " ++ (show fc) ++
+                                " (" ++ show (i * 100 `div` fc) ++ "%)\r")
+                10
 
-addMeta _ [] = return []
-addMeta m ((fn, fs):xs) =
-    catch (do ftype <- getMimeType m fn
-              --putStrLn $ fn ++ " " ++ ftype
-              --fmd5 <- getMD5 fn
-              next <- addMeta m xs
-              return $ (fn, fs, ftype, ""):next
-          ) (\e -> do putStrLn $ "WARNING " ++ fn ++ ": " ++ (show e)
-                      addMeta m xs)
+addMeta m inp =
+    do conv <- lazyMapM conv inp
+       return $ mapMaybe id conv
+    where conv (fn,fs) = catch
+                         (do ftype <- getMimeType m fn
+                             --putStrLn $ fn ++ " " ++ ftype
+                             --fmd5 <- getMD5 fn
+                             return $ Just (fn, fs, ftype, "")
+                         ) (\e -> do putStrLn $ 
+                                      "WARNING " ++ fn ++ ": " ++ (show e)
+                                     return Nothing
+                           )
 
 convfile num (fn, fs) = (num ++ tail fn, fs)
 nodirs = filter (\(fn, fs) -> not $ withStat fs vIsDirectory)
