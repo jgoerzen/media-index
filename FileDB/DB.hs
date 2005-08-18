@@ -21,10 +21,12 @@ module FileDB.DB where
 import Config
 import Database.HSQL
 import Database.HSQL.SQLite3
+import Data.Char
+import System.IO
 
-init :: IO Connection
+initdb :: IO Connection
 
-init = 
+initdb = 
     do putStrLn " *** Initializing database system..."
        dbpath <- dbdir
        handleSqlError $
@@ -39,19 +41,19 @@ initTables conn =
           then do execute conn "CREATE TABLE mistore (api TEXT)"
                   execute conn "INSERT INTO mistore VALUES ('media-index1')"
           else return ()
-       if not (elem "MIFILES" tw)
-          then do execute conn "CREATE TABLE mifiles (" ++
+       if not (elem "MIFILES" t2)
+          then do execute conn $ "CREATE TABLE mifiles (" ++
                    "discid TEXT, filename TEXT, filesize INTEGER, " ++
-                   "md5 TEXT, mimetype TEXT"
-                  execute conn "CREATE UNIQUE INDEX mifilespri ON mifiles " ++
+                   "md5 TEXT, mimetype TEXT)"
+                  execute conn $ "CREATE UNIQUE INDEX mifilespri ON mifiles " ++
                           "(discid, filename)"
-                  execute conn "CREATE INDEX mifilesmd5 ON mifiles " ++
+                  execute conn $ "CREATE INDEX mifilesmd5 ON mifiles " ++
                           "(md5)"
                   execute conn "CREATE INDEX mifilesfiles ON mifiles (filename)"
           else return ()
-       if not (elem "MIDISCS" tw)
-          then execute conn "CREATE TABLE midiscs (discid TEXT, discdescrip TEXT)"
-               execute conn "CREATE UNIQUE INDEX midiscspri ON midiscs (discid)"
+       if not (elem "MIDISCS" t2)
+          then do execute conn "CREATE TABLE midiscs (discid TEXT, discdescrip TEXT)"
+                  execute conn "CREATE UNIQUE INDEX midiscspri ON midiscs (discid)"
           else return ()
 
 

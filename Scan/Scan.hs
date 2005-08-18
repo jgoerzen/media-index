@@ -16,7 +16,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
-module Scan.Scan(scan, indexscan, index) where
+module Scan.Scan(scan) where
 import Data.Maybe
 import Config
 import Control.Monad
@@ -70,6 +70,7 @@ convfile num (fn, fs) = (num ++ tail fn, fs)
 -- FIXME: should probably select just files and symlinks
 
 nodirs = filter (\(fn, fs) -> not $ withStat fs vIsDirectory)
+{-
 
 index dir num title files = 
     runhe [] filelist
@@ -82,6 +83,7 @@ indexscan dir num title =
        runhe ["-ft"] 
                  [(id ++ "/" ++ num ++ ".idx.txt",
                    "file:///INDEX/" ++ num)]
+
 
 runhe :: [String] -> [(String, String)] -> IO ()
 runhe extraargs idxfiles =
@@ -100,3 +102,4 @@ runhe extraargs idxfiles =
 
 
 
+-}

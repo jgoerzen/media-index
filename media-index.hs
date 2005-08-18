@@ -37,9 +37,10 @@ main = do
           _ -> syntax
 
 process dir num title = 
-    do c <- init
+    do c <- initdb
        disconnect c
        scan dir num title
+       return ()
        --indexscan dir num title
        --index dir num title
        
