@@ -2,7 +2,7 @@ Source: media-index
 Section: unknown
 Priority: optional
 Maintainer: John Goerzen <jgoerzen@complete.org>
-Build-Depends: debhelper (>= 4.0.0), libghc6-magic-dev, libmhash-dev
+Build-Depends: debhelper (>= 4.0.0), libghc6-magic-dev, libmhash-dev, libghc6-hsql-sqlite3-dev
 Standards-Version: 3.6.1
 
 Package: media-index

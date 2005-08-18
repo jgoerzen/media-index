@@ -16,7 +16,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
-module Config (namazuDir, fileDir, mknmzArgs)
+module Config (searchdir, dbdir, mknmzArgs)
 where
 
 import MissingH.ConfigParser
@@ -34,8 +34,8 @@ genericget :: String -> IO String
 genericget opt = do cp <- getcp
                     return $ forceEither $ get cp "DEFAULT" opt
 
-namazuDir = genericget "namazuindex"
-fileDir = genericget "fileindex"
+searchdir = genericget "searchdir"
+dbdir = genericget "dbdir"
 
 mknmzArgs :: IO [String]
 mknmzArgs = do a <- genericget "mknmzargs"

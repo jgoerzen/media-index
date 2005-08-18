@@ -22,6 +22,8 @@ import Config
 import System.Environment
 import Scan.Scan
 import MissingH.IO
+import FileDB.DB
+import Database.HSQL
 
 syntax = do
          putStrLn "Syntax:"
@@ -35,7 +37,9 @@ main = do
           _ -> syntax
 
 process dir num title = 
-    do scan dir num title
-       indexscan dir num title
+    do c <- init
+       disconnect c
+       scan dir num title
+       --indexscan dir num title
        --index dir num title
        
