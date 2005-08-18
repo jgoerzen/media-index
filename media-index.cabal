@@ -10,6 +10,7 @@ Executable: media-index
 Extensions: ExistentialQuantification, AllowOverlappingInstances,
     AllowUndecidableInstances, ForeignFunctionInterface
 GHC-Options: -O2
+CC-Options: -O3
 Main-Is: media-index.hs
 C-Sources: Scan/media_md5.c
 Extra-Libraries: mhash

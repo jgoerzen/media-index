@@ -28,19 +28,7 @@ import MissingH.IO.HVFS
 import System.IO
 import Control.Monad
 import Scan.Scanutils
-
-mb = 1048576
-
-counter :: (Int -> IO ()) -> Int -> [a] -> IO [a]
-counter dispf interval inplist =
-    do res <- foldM writeit (0,[]) inplist
-       return $ snd res
-    where writeit (count, accum) x =
-              do if count `mod` interval == 0
-                    then do dispf count
-                            hFlush stdout
-                    else return ()
-                 return (count + 1, x : accum)
+import Utils
 
 scan dir num title = bracketCWD dir $
     do putStrLn " *** Scanning source directory..."
@@ -53,7 +41,9 @@ scan dir num title = bracketCWD dir $
        putStrLn " *** Determining MD5 sums and MIME types for files."
        m <- initMagic
        xfiles <- (addMeta m files >>= md5progress (length files))
-       putStrLn $ show (length xfiles)
+       putStrLn ""
+       putStrLn $ show (length xfiles) ++ " remain to process."
+       return xfiles
     where 
     dispCount = counter (\i -> putStr $ "Found " ++ (show i) ++ " items\r")
                         10
@@ -80,21 +70,6 @@ convfile num (fn, fs) = (num ++ tail fn, fs)
 -- FIXME: should probably select just files and symlinks
 
 nodirs = filter (\(fn, fs) -> not $ withStat fs vIsDirectory)
-
-writefiles dir num title files =
-    do putStrLn "Scanning input directory..."
-       id <- fileDir
-       res <- foldM writeit (1,[]) files
-       writeFile (id ++ "/" ++ num ++ ".idx.txt") (unlines (snd res))
-    where writeit (counter,accum) (fn,fs) =
-              do if counter `mod` 10 == 0
-                    then do putStr $ "Processed " ++ (show counter) ++ " files\r"
-                            hFlush stdout
-                    else return ()
-                 let filesize = withStat fs vFileSize
-                 let entry = fn ++ "\t" ++ (show filesize)
-                 return (counter + 1,
-                         entry : accum)
 
 index dir num title files = 
     runhe [] filelist
