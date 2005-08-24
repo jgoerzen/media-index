@@ -56,6 +56,36 @@ initTables conn =
                   execute conn "CREATE UNIQUE INDEX midiscspri ON midiscs (discid)"
           else return ()
 
+{- | Add a new disc to the system. -}
+addDisc :: Connection 
+        -> String               -- ^ Disc ID
+        -> String               -- ^ Description
+        -> IO ()
+addDisc conn id descrip = handleSqlError $
+    execute conn $ "INSERT INTO midiscs VALUES (" ++
+            toSqlValue id ++ ", " ++ toSqlValud descript ++ ")"
+
+{- | Add a new file to the system. -}
+addFile :: Connection
+        -> String               -- Disc ID
+        -> Integer              -- File size
+        -> String               -- md5
+        -> String               -- MIME type
+        -> IO ()
+addFile conn discid fsize md5 mimetype = handleSqlError $
+    execute conn $ "INSERT INTO mifiles VALUE (" ++
+            (concat . intersperse ", " [toSqlValue discid,
+                                        toSqlValue fsize,
+                                        toSqlValue md5,
+                                        toSqlValue mimetype])
+            ++ ")"
+
+{- | Deletes all file records on the disc. -}
+wipeFiles :: Connection
+          -> String             -- ^ Disc ID
+          -> IO ()
+wipeFiles conn discid = handleSqlError $
+    execute con $ "DELETE FROM mifiles WHERE discid = " ++ toSqlValue discid
 
 {- | Propogate SQL exceptions to IO monad. -}
 handleSqlError :: IO a -> IO a
