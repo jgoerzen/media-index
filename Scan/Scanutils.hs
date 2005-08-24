@@ -31,7 +31,7 @@ initMagic = do m <- magicOpen [MagicMime]
 getMimeType :: Magic -> String -> IO String
 getMimeType m fn = 
     do t <- magicFile m fn
-       return $ takeWhile ((/=) ';') t
+       return $ takeWhile (\x -> not (elem x ";, ") t
 
 getMD5Sum :: String -> COff -> IO String
 getMD5Sum fn fsize = withCString fn (\cfn ->

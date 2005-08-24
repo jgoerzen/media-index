@@ -32,16 +32,20 @@ import Scan.Scanutils
 import Utils
 import Types
 
-scan dir num title = bracketCWD dir $
-    do putStrLn " *** Scanning source directory..."
+scan fsroot dir num title = 
+    do m <- initMagic
+       runscan m fsroot dir num title
+
+runscan m base dir num title = bracketCWD dir $
+    do putStrLn " *** Scanning source " ++ dir ++ "..."
        items <- (recurseDirStat SystemFS "." >>= dispCount)
-       putStrLn $ "Found " ++ (show $ length items) ++ " total items.  "
-       let size = sum . map (\(_, fs) -> withStat fs vFileSize) $ items
-       putStrLn $ (show (length items)) ++ " non-directories, totaling " ++
+       let files = map (\(fn, fs) -> (base ++ "/" ++ fn, fs)) items
+       putStrLn $ "Found " ++ (show $ length files) ++ " total items.  "
+       let size = sum . map (\(_, fs) -> withStat fs vFileSize) $ files
+       putStrLn $ (show (length files)) ++ " non-directories, totaling " ++
                 show (size `div` mb) ++ "MB"
        putStrLn " *** Determining MD5 sums and MIME types for files."
-       m <- initMagic
-       xfiles <- (addMeta m items >>= md5progress (length items))
+       xfiles <- (addMeta m files >>= md5progress (length files))
        putStrLn ""
        putStrLn $ show (length xfiles) ++ " remain to process."
        return xfiles
@@ -73,8 +77,8 @@ addMeta m inp =
                    special (fn, fs) "inode/fifo"
               else if withStat fs vIsSocket then
                    special (fn, fs) "inode/socket"
--- FIXME: symlinks (symlinks to dirs generate md5 warning)
--- FIXME: some mime types are "application/x-object, not stripped"
+              else if withStat fs vIsSymbolicLink then
+                   special (fn, fs) "x-inode/symbolic-link"
               else catch
                          (do let fsize = withStat fs vFileSize
                              ftype <- getMimeType m fn

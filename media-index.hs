@@ -24,6 +24,7 @@ import Scan.Scan
 import MissingH.IO
 import FileDB.DB
 import Database.HSQL
+import Process
 
 syntax = do
          putStrLn "Syntax:"
@@ -38,13 +39,14 @@ main = do
 
 process dir num title = 
     do c <- initdb
-       files <- scan dir num title
-       putStrLn " *** Noting disc in DB..."
-       hFlush stdout
-       addDisc c num title
+       files <- scan "" dir num title
+       process c "" dir num title
        putStrLn " *** Adding files to DB..."
        hFlush stdout
        setFilesRec c num files
+       putStrLn " *** Noting disc in DB..."
+       hFlush stdout
+       addDisc c num title
        putStrLn " *** Cleaning up..."
        hFlush stdout
        disconnect c
