@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
 module Scan.Scan(scan) where
+import Magic
 import Data.Maybe
 import Config
 import Control.Monad
@@ -40,7 +41,7 @@ scan dir num title = bracketCWD dir $
                 show (size `div` mb) ++ "MB"
        putStrLn " *** Determining MD5 sums and MIME types for files."
        m <- initMagic
-       xfiles <- (addMeta m files >>= md5progress (length items))
+       xfiles <- (addMeta m items >>= md5progress (length items))
        putStrLn ""
        putStrLn $ show (length xfiles) ++ " remain to process."
        return xfiles
@@ -52,16 +53,16 @@ scan dir num title = bracketCWD dir $
                                 " (" ++ show (i * 100 `div` fc) ++ "%)\r")
                 10
 
-addMeta :: Magic -> [String] -> IO [FileRec]
+addMeta :: Magic -> [(FilePath, HVFSStatEncap)] -> IO [FileRec]
 addMeta m inp =
-    do conv <- lazyMapM conv inp
-       return $ mapMaybe id conv
+    do c <- lazyMapM conv inp
+       return $ mapMaybe id c
     where special (fn, fs) t = return $ Just $ 
                                FileRec {frname = fn,
-                                        frsize = withStat fs vFileSize,
+                                        frsize = fromIntegral $ withStat fs vFileSize,
                                         frmd5 = "",
                                         frmime = t}
-    conv (fn,fs) = 
+          conv (fn,fs) = 
               if withStat fs vIsDirectory then
                  special (fn, fs) "inode/directory"
               else if withStat fs vIsBlockDevice then
@@ -78,7 +79,7 @@ addMeta m inp =
                              fmd5 <- getMD5Sum fn (withStat fs vFileSize)
                              --putStrLn $ fn ++ " " ++ ftype ++ " " ++ fmd5
                              return $ Just $ FileRec {frname = fn,
-                                                      frsize = fs,
+                                                      frsize = fromIntegral fsize,
                                                       frmd5 = fmd5,
                                                       frmime = ftype}
                          ) (\e -> do putStrLn $ 

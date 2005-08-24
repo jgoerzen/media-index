@@ -18,8 +18,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 module Types where
 
-data FileRec = {frname :: String,
-                frsize :: Integer,
-                frmd5 :: String,
-                frmime :: String}
+data FileRec = FileRec {frname :: String,
+                        frsize :: Integer,
+                        frmd5 :: String,
+                        frmime :: String}
 

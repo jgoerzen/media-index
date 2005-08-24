@@ -24,6 +24,7 @@ import Database.HSQL.SQLite3
 import Data.Char
 import System.IO
 import Types
+import Data.List
 
 initdb :: IO Connection
 
@@ -64,7 +65,7 @@ addDisc :: Connection
         -> IO ()
 addDisc conn id descrip = handleSqlError $
     execute conn $ "INSERT INTO midiscs VALUES (" ++
-            toSqlValue id ++ ", " ++ toSqlValud descript ++ ")"
+            toSqlValue id ++ ", " ++ toSqlValue descrip ++ ")"
 
 {- | Add a new file to the system. -}
 addFile :: Connection
@@ -76,11 +77,11 @@ addFile :: Connection
         -> IO ()
 addFile conn discid fname fsize md5 mimetype = handleSqlError $
     execute conn $ "INSERT INTO mifiles VALUE (" ++
-            (concat . intersperse ", " [toSqlValue discid,
-                                        toSqlValue fname,
-                                        toSqlValue fsize,
-                                        toSqlValue md5,
-                                        toSqlValue mimetype])
+            (concat . intersperse ", " $ [toSqlValue discid,
+                                          toSqlValue fname,
+                                          toSqlValue fsize,
+                                          toSqlValue md5,
+                                          toSqlValue mimetype])
             ++ ")"
 
 {- | Adds a file from a FileRec. -}
@@ -92,7 +93,7 @@ wipeFiles :: Connection
           -> String             -- ^ Disc ID
           -> IO ()
 wipeFiles conn discid = handleSqlError $
-    execute con $ "DELETE FROM mifiles WHERE discid = " ++ toSqlValue discid
+    execute conn $ "DELETE FROM mifiles WHERE discid = " ++ toSqlValue discid
 
 {- | Propogate SQL exceptions to IO monad. -}
 handleSqlError :: IO a -> IO a
