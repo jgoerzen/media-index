@@ -76,7 +76,7 @@ addFile :: Connection
         -> String               -- MIME type
         -> IO ()
 addFile conn discid fname fsize md5 mimetype = handleSqlError $
-    execute conn $ "INSERT INTO mifiles VALUE (" ++
+    execute conn $ "INSERT INTO mifiles VALUES (" ++
             (concat . intersperse ", " $ [toSqlValue discid,
                                           toSqlValue fname,
                                           toSqlValue fsize,
@@ -87,6 +87,13 @@ addFile conn discid fname fsize md5 mimetype = handleSqlError $
 {- | Adds a file from a FileRec. -}
 addFileRec conn discid fr = 
     addFile conn discid (frname fr) (frsize fr) (frmd5 fr) (frmime fr)
+
+{- | Sets the list of files for a given disc to the passed list. -}
+setFilesRec :: Connection -> String -> [FileRec] -> IO ()
+setFilesRec conn discid frlist = handleSqlError $
+    inTransaction conn (\tconn -> do wipeFiles tconn discid
+                                     mapM_ (addFileRec tconn discid) frlist
+                  )
 
 {- | Deletes all file records on the disc. -}
 wipeFiles :: Connection

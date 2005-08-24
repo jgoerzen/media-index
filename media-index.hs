@@ -38,8 +38,16 @@ main = do
 
 process dir num title = 
     do c <- initdb
+       files <- scan dir num title
+       putStrLn " *** Noting disc in DB..."
+       hFlush stdout
+       addDisc c num title
+       putStrLn " *** Adding files to DB..."
+       hFlush stdout
+       setFilesRec c num files
+       putStrLn " *** Cleaning up..."
+       hFlush stdout
        disconnect c
-       scan dir num title
        return ()
        --indexscan dir num title
        --index dir num title

@@ -73,6 +73,8 @@ addMeta m inp =
                    special (fn, fs) "inode/fifo"
               else if withStat fs vIsSocket then
                    special (fn, fs) "inode/socket"
+-- FIXME: symlinks (symlinks to dirs generate md5 warning)
+-- FIXME: some mime types are "application/x-object, not stripped"
               else catch
                          (do let fsize = withStat fs vFileSize
                              ftype <- getMimeType m fn
