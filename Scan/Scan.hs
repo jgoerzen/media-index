@@ -29,18 +29,18 @@ import System.IO
 import Control.Monad
 import Scan.Scanutils
 import Utils
+import Types
 
 scan dir num title = bracketCWD dir $
     do putStrLn " *** Scanning source directory..."
        items <- (recurseDirStat SystemFS "." >>= dispCount)
-       putStr $ "Found " ++ (show $ length items) ++ " total items.  "
-       let files = nodirs items
-       let size = sum . map (\(_, fs) -> withStat fs vFileSize) $ files
-       putStrLn $ (show (length files)) ++ " non-directories, totaling " ++
+       putStrLn $ "Found " ++ (show $ length items) ++ " total items.  "
+       let size = sum . map (\(_, fs) -> withStat fs vFileSize) $ items
+       putStrLn $ (show (length items)) ++ " non-directories, totaling " ++
                 show (size `div` mb) ++ "MB"
        putStrLn " *** Determining MD5 sums and MIME types for files."
        m <- initMagic
-       xfiles <- (addMeta m files >>= md5progress (length files))
+       xfiles <- (addMeta m files >>= md5progress (length items))
        putStrLn ""
        putStrLn $ show (length xfiles) ++ " remain to process."
        return xfiles
@@ -52,14 +52,35 @@ scan dir num title = bracketCWD dir $
                                 " (" ++ show (i * 100 `div` fc) ++ "%)\r")
                 10
 
+addMeta :: Magic -> [String] -> IO [FileRec]
 addMeta m inp =
     do conv <- lazyMapM conv inp
        return $ mapMaybe id conv
-    where conv (fn,fs) = catch
-                         (do ftype <- getMimeType m fn
+    where special (fn, fs) t = return $ Just $ 
+                               FileRec {frname = fn,
+                                        frsize = withStat fs vFileSize,
+                                        frmd5 = "",
+                                        frmime = t}
+    conv (fn,fs) = 
+              if withStat fs vIsDirectory then
+                 special (fn, fs) "inode/directory"
+              else if withStat fs vIsBlockDevice then
+                   special (fn, fs) "inode/blockdevice"
+              else if withStat fs vIsCharacterDevice then
+                   special (fn, fs) "inode/chardevice"
+              else if withStat fs vIsNamedPipe then
+                   special (fn, fs) "inode/fifo"
+              else if withStat fs vIsSocket then
+                   special (fn, fs) "inode/socket"
+              else catch
+                         (do let fsize = withStat fs vFileSize
+                             ftype <- getMimeType m fn
                              fmd5 <- getMD5Sum fn (withStat fs vFileSize)
                              --putStrLn $ fn ++ " " ++ ftype ++ " " ++ fmd5
-                             return $ Just (fn, fs, ftype, fmd5)
+                             return $ Just $ FileRec {frname = fn,
+                                                      frsize = fs,
+                                                      frmd5 = fmd5,
+                                                      frmime = ftype}
                          ) (\e -> do putStrLn $ 
                                       "WARNING " ++ fn ++ ": " ++ (show e)
                                      return Nothing

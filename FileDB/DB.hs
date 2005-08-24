@@ -23,6 +23,7 @@ import Database.HSQL
 import Database.HSQL.SQLite3
 import Data.Char
 import System.IO
+import Types
 
 initdb :: IO Connection
 
@@ -68,17 +69,23 @@ addDisc conn id descrip = handleSqlError $
 {- | Add a new file to the system. -}
 addFile :: Connection
         -> String               -- Disc ID
+        -> String               -- File name
         -> Integer              -- File size
         -> String               -- md5
         -> String               -- MIME type
         -> IO ()
-addFile conn discid fsize md5 mimetype = handleSqlError $
+addFile conn discid fname fsize md5 mimetype = handleSqlError $
     execute conn $ "INSERT INTO mifiles VALUE (" ++
             (concat . intersperse ", " [toSqlValue discid,
+                                        toSqlValue fname,
                                         toSqlValue fsize,
                                         toSqlValue md5,
                                         toSqlValue mimetype])
             ++ ")"
+
+{- | Adds a file from a FileRec. -}
+addFileRec conn discid fr = 
+    addFile conn discid (frname fr) (frsize fr) (frmd5 fr) (frmime fr)
 
 {- | Deletes all file records on the disc. -}
 wipeFiles :: Connection
