@@ -22,6 +22,7 @@ import Config
 import System.Environment
 import Scan.Scan
 import MissingH.IO
+import System.IO
 import FileDB.DB
 import Database.HSQL
 import Process.Process
@@ -39,14 +40,14 @@ main = do
 
 process dir num title = 
     do c <- initdb
-       files <- scan "" dir num title
-       process c "" dir num title files
-       putStrLn " *** Adding files to DB..."
-       hFlush stdout
-       setFilesRec c num files
-       putStrLn " *** Noting disc in DB..."
-       hFlush stdout
-       addDisc c num title
+       handleSqlError $ inTransaction c (\tc ->
+          do wipeFiles tc num
+             files <- scan "" dir num title
+             processit tc "" dir num title files
+             putStrLn " *** Noting disc in DB..."
+             hFlush stdout
+             addDisc c num title
+                                        )
        putStrLn " *** Cleaning up..."
        hFlush stdout
        disconnect c

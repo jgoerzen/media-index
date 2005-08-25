@@ -16,11 +16,32 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
-module Process where
+module Process.Process where
 
 import Config
+import Data.Char
 import Scan.Scan
 import Types
+import FileDB.DB
+import System.IO
 
-process conn base fsdir num title files =
-    
+filtertype :: [String] -> [FileRec] -> [FileRec]
+filtertype tl l = filter (\rec -> elem (map toLower (frname rec)) tll) l
+                  where tll = map (map toLower) tl
+
+procfuncs = [(["application/x-zip"], proczip)]
+
+processit conn base fsdir num title files =
+    do putStrLn " *** Adding files to DB..."
+       hFlush stdout
+       mapM_ (addFileRec conn num) files
+       mapM_ (runproc files) procfuncs
+    where runproc files (typelist, procfunc) =
+              let filestoproc = filtertype typelist files
+                  in if length filestoproc > 0
+                     then procfunc filestoproc
+                     else return ()
+
+
+          
+proczip files = return ()

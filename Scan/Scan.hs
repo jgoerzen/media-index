@@ -37,7 +37,7 @@ scan fsroot dir num title =
        runscan m fsroot dir num title
 
 runscan m base dir num title = bracketCWD dir $
-    do putStrLn " *** Scanning source " ++ dir ++ "..."
+    do putStrLn $ " *** Scanning source " ++ dir ++ "..."
        items <- (recurseDirStat SystemFS "." >>= dispCount)
        let files = map (\(fn, fs) -> (base ++ "/" ++ fn, fs)) items
        putStrLn $ "Found " ++ (show $ length files) ++ " total items.  "
