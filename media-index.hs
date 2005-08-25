@@ -24,7 +24,7 @@ import Scan.Scan
 import MissingH.IO
 import FileDB.DB
 import Database.HSQL
-import Process
+import Process.Process
 
 syntax = do
          putStrLn "Syntax:"
@@ -40,7 +40,7 @@ main = do
 process dir num title = 
     do c <- initdb
        files <- scan "" dir num title
-       process c "" dir num title
+       process c "" dir num title files
        putStrLn " *** Adding files to DB..."
        hFlush stdout
        setFilesRec c num files
